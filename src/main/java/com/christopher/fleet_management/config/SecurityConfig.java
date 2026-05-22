@@ -23,7 +23,11 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http
-				.csrf(csrf -> csrf.disable())
+				.csrf(csrf -> csrf
+						.ignoringRequestMatchers("/h2-console/**")
+						.disable())
+				.headers(headers -> headers
+						.frameOptions(frame -> frame.disable()))
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers("/api/v1/auth/**").permitAll()
 						.requestMatchers("/h2-console/**").permitAll()
