@@ -39,6 +39,7 @@ public class Asset {
 	@Enumerated(EnumType.STRING)
 	private AssetStatus status;
 
+	@Builder.Default
 	private boolean active = true;
 
 	@ManyToOne

@@ -1,0 +1,236 @@
+# ===================================================
+# Fleet Management API - Manual Testing Guide
+# ===================================================
+# How to use this file:
+# 1. Install the REST Client extension in VS Code
+# 2. Start the app with ./mvnw.cmd spring-boot:run
+# 3. Run the requests in order from top to bottom
+# 4. After logging in, copy your token and paste it
+#    in place of <YOUR_TOKEN_HERE> in all requests below
+# ===================================================
+
+
+# ===================================================
+# STEP 1 - REGISTER USERS
+# Run these once to create your test users
+# ===================================================
+
+### Register a Fleet Manager (has full access)
+POST http://localhost:8080/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "name": "Chris Manager",
+  "email": "chris@fleet.com",
+  "password": "password123",
+  "role": "FLEET_MANAGER"
+}
+
+###
+
+### Register an Operator (limited access)
+POST http://localhost:8080/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "name": "John Operator",
+  "email": "john@fleet.com",
+  "password": "password123",
+  "role": "OPERATOR"
+}
+
+
+# ===================================================
+# STEP 2 - LOGIN
+# Run this and copy the token from the response
+# Paste it in place of <YOUR_TOKEN_HERE> below
+# ===================================================
+
+### Login as Fleet Manager
+POST http://localhost:8080/api/v1/auth/authenticate
+Content-Type: application/json
+
+{
+  "email": "chris@fleet.com",
+  "password": "password123"
+}
+
+###
+
+### Login as Operator (to test operator-level access)
+POST http://localhost:8080/api/v1/auth/authenticate
+Content-Type: application/json
+
+{
+  "email": "john@fleet.com",
+  "password": "password123"
+}
+
+
+# ===================================================
+# STEP 3 - CREATE AN OPERATOR RECORD
+# This is the operator entity in the system (different
+# from the user account above). Assets get assigned
+# to this operator record.
+# ===================================================
+
+### Create an operator record
+# Requires FLEET_MANAGER token
+POST http://localhost:8080/api/operators
+Content-Type: application/json
+Authorization: Bearer <YOUR_TOKEN_HERE>
+
+{
+  "name": "John Operator",
+  "email": "john@fleet.com"
+}
+
+
+# ===================================================
+# STEP 4 - ASSETS
+# Create and manage fleet assets
+# ===================================================
+
+### Create a new asset
+# Requires FLEET_MANAGER token
+POST http://localhost:8080/api/assets
+Content-Type: application/json
+Authorization: Bearer <YOUR_TOKEN_HERE>
+
+{
+  "name": "Truck 01",
+  "type": "VEHICLE",
+  "status": "ACTIVE"
+}
+
+###
+
+### Create another asset to have more data to work with
+POST http://localhost:8080/api/assets
+Content-Type: application/json
+Authorization: Bearer <YOUR_TOKEN_HERE>
+
+{
+  "name": "Forklift 01",
+  "type": "EQUIPMENT",
+  "status": "ACTIVE"
+}
+
+###
+
+### Get all assets (paginated)
+# Both FLEET_MANAGER and OPERATOR can do this
+GET http://localhost:8080/api/assets
+Authorization: Bearer <YOUR_TOKEN_HERE>
+
+###
+
+### Get all assets filtered by status
+# Try: ACTIVE, INACTIVE, UNDER_MAINTENANCE, DECOMMISSIONED
+GET http://localhost:8080/api/assets?status=ACTIVE
+Authorization: Bearer <YOUR_TOKEN_HERE>
+
+###
+
+### Get all assets filtered by type
+# Try: VEHICLE, EQUIPMENT, TRAILER, OTHER
+GET http://localhost:8080/api/assets?type=VEHICLE
+Authorization: Bearer <YOUR_TOKEN_HERE>
+
+###
+
+### Get a single asset by its ID
+GET http://localhost:8080/api/assets/1
+Authorization: Bearer <YOUR_TOKEN_HERE>
+
+###
+
+### Update an asset
+# Requires FLEET_MANAGER token
+PUT http://localhost:8080/api/assets/1
+Content-Type: application/json
+Authorization: Bearer <YOUR_TOKEN_HERE>
+
+{
+  "name": "Truck 01 - Updated",
+  "type": "VEHICLE",
+  "status": "UNDER_MAINTENANCE"
+}
+
+
+# ===================================================
+# STEP 5 - ASSIGN ASSET TO OPERATOR
+# Use the operator ID returned in Step 3
+# ===================================================
+
+### Assign an asset to an operator
+# Requires FLEET_MANAGER token
+# Change operatorId to match the ID from Step 3
+POST http://localhost:8080/api/assets/1/assign?operatorId=1
+Authorization: Bearer <YOUR_TOKEN_HERE>
+
+
+# ===================================================
+# STEP 6 - USAGE RECORDS
+# Log and retrieve usage history for an asset
+# ===================================================
+
+### Log a usage record for an asset
+# Both FLEET_MANAGER and OPERATOR can do this
+POST http://localhost:8080/api/assets/1/usage
+Content-Type: application/json
+Authorization: Bearer <YOUR_TOKEN_HERE>
+
+{
+  "hours": 8.5,
+  "mileage": 120.0,
+  "notes": "Long haul delivery to Pretoria"
+}
+
+###
+
+### Log another usage record to build up history
+POST http://localhost:8080/api/assets/1/usage
+Content-Type: application/json
+Authorization: Bearer <YOUR_TOKEN_HERE>
+
+{
+  "hours": 4.0,
+  "mileage": 60.0,
+  "notes": "Local delivery around Johannesburg"
+}
+
+###
+
+### Get usage history for an asset (paginated)
+GET http://localhost:8080/api/assets/1/usage
+Authorization: Bearer <YOUR_TOKEN_HERE>
+
+
+# ===================================================
+# STEP 7 - OPERATOR ASSETS
+# See all assets currently assigned to an operator
+# ===================================================
+
+### Get all assets assigned to a specific operator
+# Change the ID in the URL to match your operator
+GET http://localhost:8080/api/operators/1/assets
+Authorization: Bearer <YOUR_TOKEN_HERE>
+
+
+# ===================================================
+# STEP 8 - SOFT DELETE
+# Deactivates the asset without removing it from the DB
+# After deleting, try GET /api/assets/1 - it should 404
+# ===================================================
+
+### Soft delete an asset
+# Requires FLEET_MANAGER token
+DELETE http://localhost:8080/api/assets/1
+Authorization: Bearer <YOUR_TOKEN_HERE>
+
+###
+
+### Confirm the asset is gone from the list
+GET http://localhost:8080/api/assets
+Authorization: Bearer <YOUR_TOKEN_HERE>
